@@ -12,7 +12,7 @@ Google Antigravity (Gemini 3 Pro) を使用して作成された、座りすぎ�
 
 ## デモ
 実際に動作するデモはこちら:
-https://wondrous-syrniki-f0846f.netlify.app/
+https://comforting-pasca-045f00.netlify.app/
 
 ## 使い方
 1.  URLにアクセスし、カメラの使用を許可してください。
