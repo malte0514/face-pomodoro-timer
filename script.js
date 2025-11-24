@@ -58,6 +58,9 @@ const STATE = {
 };
 let currentState = STATE.WORK;
 
+// ★これを追加してください
+let lastTaskIndex = -1;
+
 // Timer State
 let workDuration = 25;
 let breakDuration = 5;
@@ -624,14 +627,25 @@ function startBreak() {
     timerDisplay.classList.add('break-mode');
     timerDisplay.classList.remove('dimmed');
 
-    // Show Marquee with random task
+// Show Marquee with random task (重複防止版)
     if (breakTasks.length > 0) {
-        const randomTask = breakTasks[Math.floor(Math.random() * breakTasks.length)];
-        marqueeText.textContent = randomTask;
+        let randomIndex;
+        
+        // タスクが1個しかないときはそれを選ぶしかない
+        if (breakTasks.length === 1) {
+            randomIndex = 0;
+        } else {
+            // 前回と違う番号が出るまでサイコロを振り直す
+            do {
+                randomIndex = Math.floor(Math.random() * breakTasks.length);
+            } while (randomIndex === lastTaskIndex);
+        }
+        
+        lastTaskIndex = randomIndex; // 今回の番号を記憶
+        marqueeText.textContent = breakTasks[randomIndex];
     } else {
         marqueeText.textContent = "RELAX";
-    }
-    marqueeContainer.classList.remove('hidden');
+    }    marqueeContainer.classList.remove('hidden');
 }
 
 function endBreak() {
