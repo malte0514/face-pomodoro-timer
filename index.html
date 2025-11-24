@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition Pomodoro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=Roboto+Mono&family=Fira+Code&family=VT323&family=Inconsolata&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div id="marquee-container" class="hidden">
+        <div id="marquee-text">BREAK TIME: TAKE A DEEP BREATH</div>
+    </div>
+
+    <div id="main-container" style="position: relative;">
+        <!-- Fullscreen Button -->
+        <button id="fullscreen-btn"
+            style="position: absolute; top: 1rem; left: 1rem; background: none; border: none; color: var(--dim-color); cursor: pointer; z-index: 60;">
+            <svg id="fullscreen-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3">
+                </path>
+            </svg>
+        </button>
+
+        <div id="clock-section">
+            <div id="current-time">
+                <span id="time-main">00:00</span>
+                <span id="time-sub">00</span>
+            </div>
+        </div>
+
+        <div id="bottom-section">
+            <div id="date-display">YYYY/MM/DD</div>
+
+            <button id="break-btn" class="hidden">STOP & BREAK</button>
+
+            <div id="right-controls">
+                <button id="settings-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
+                        </path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+                <div id="timer-container">
+                    <div id="timer-display">25:00</div>
+                    <div id="status-dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden">
+        <div class="modal-content">
+            <h2>SETTINGS</h2>
+
+            <!-- Face Recognition -->
+            <div class="setting-group">
+                <h3>FACE RECOGNITION</h3>
+                <div class="setting-item">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label for="sensitivity-slider">SENSITIVITY: <span id="sensitivity-value">0.5</span></label>
+                        <div id="settings-status-dot"></div>
+                    </div>
+                    <input type="range" id="sensitivity-slider" min="0.1" max="0.9" step="0.1" value="0.5">
+                </div>
+            </div>
+
+            <!-- Audio -->
+            <div class="setting-group">
+                <h3>AUDIO</h3>
+                <div class="setting-item">
+                    <label for="tone-select">ALARM TONE</label>
+                    <select id="tone-select">
+                        <option value="sawtooth">SAWTOOTH</option>
+                        <option value="square">SQUARE</option>
+                        <option value="sine">SINE</option>
+                        <option value="triangle">TRIANGLE</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="volume-slider">VOLUME: <span id="volume-value">80</span>%</label>
+                    <input type="range" id="volume-slider" min="0" max="100" value="80">
+                </div>
+            </div>
+
+            <!-- Timer Settings -->
+            <div class="setting-group">
+                <h3>TIMER SETTINGS</h3>
+                <div class="setting-subgroup">
+                    <label>WORK DURATION (MIN)</label>
+                    <input type="number" id="work-duration-input" min="1" max="120" value="25">
+                </div>
+                <div class="setting-subgroup">
+                    <label>BREAK DURATION (MIN)</label>
+                    <input type="number" id="break-duration-input" min="1" max="120" value="5">
+                </div>
+            </div>
+
+            <!-- Typography -->
+            <div class="setting-group">
+                <h3>TYPOGRAPHY</h3>
+                <div class="setting-item">
+                    <label for="font-select">FONT FAMILY</label>
+                    <select id="font-select">
+                        <option value="'Share Tech Mono', monospace" style="font-family: 'Share Tech Mono', monospace;">
+                            Share Tech Mono</option>
+                        <option value="'Roboto Mono', monospace" style="font-family: 'Roboto Mono', monospace;">Roboto
+                            Mono</option>
+                        <option value="'Fira Code', monospace" style="font-family: 'Fira Code', monospace;">Fira Code
+                        </option>
+                        <option value="'VT323', monospace" style="font-family: 'VT323', monospace;">VT323</option>
+                        <option value="'Inconsolata', monospace" style="font-family: 'Inconsolata', monospace;">
+                            Inconsolata</option>
+                    </select>
+                </div>
+
+                <details class="typography-subgroup">
+                    <summary>CLOCK (HH:MM)</summary>
+                    <div class="slider-row">
+                        <span>SIZE</span>
+                        <input type="range" id="clock-size-slider" min="10" max="50" value="30">
+                    </div>
+                    <div class="slider-row">
+                        <span>SPACE</span>
+                        <input type="range" id="clock-spacing-slider" min="-40" max="20" value="0">
+                    </div>
+                </details>
+
+                <details class="typography-subgroup">
+                    <summary>SECONDS (SS)</summary>
+                    <div class="slider-row">
+                        <span>SIZE</span>
+                        <input type="range" id="seconds-size-slider" min="5" max="20" value="8">
+                    </div>
+                    <div class="slider-row">
+                        <span>SPACE</span>
+                        <input type="range" id="seconds-spacing-slider" min="-40" max="10" value="0">
+                    </div>
+                </details>
+
+                <details class="typography-subgroup">
+                    <summary>DATE</summary>
+                    <div class="slider-row">
+                        <span>SIZE</span>
+                        <input type="range" id="date-size-slider" min="2" max="10" value="5">
+                    </div>
+                    <div class="slider-row">
+                        <span>SPACE</span>
+                        <input type="range" id="date-spacing-slider" min="-40" max="10" value="0">
+                    </div>
+                </details>
+
+                <details class="typography-subgroup">
+                    <summary>TIMER</summary>
+                    <div class="slider-row">
+                        <span>SIZE</span>
+                        <input type="range" id="timer-size-slider" min="2" max="10" value="5">
+                    </div>
+                    <div class="slider-row">
+                        <span>SPACE</span>
+                        <input type="range" id="timer-spacing-slider" min="-40" max="10" value="0">
+                    </div>
+                </details>
+            </div>
+
+            <!-- Break Tasks -->
+            <div class="setting-group">
+                <h3>BREAK TASKS</h3>
+                <div class="task-input-row">
+                    <input type="text" id="new-task-input" placeholder="Enter task...">
+                    <button id="add-task-btn">ADD</button>
+                </div>
+                <ul id="task-list">
+                    <!-- Tasks will be injected here -->
+                </ul>
+            </div>
+
+            <div class="version-info">
+                <span id="app-version">ver.----</span>
+            </div>
+
+            <button id="reset-settings-btn" style="margin-top: 1rem; color: #ff4444; border-color: #ff4444;">RESET TO
+                DEFAULTS</button>
+            <button id="close-settings-btn">CLOSE</button>
+        </div>
+    </div>
+
+    <video id="webcam" autoplay playsinline muted
+        style="position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; z-index: -1;"></video>
+
+    <script type="module" src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>
